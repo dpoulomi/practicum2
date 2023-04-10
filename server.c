@@ -143,7 +143,7 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
   // printf("'%s'\n", ptr);
   if (strcmp(array[0], "GET") == 0)
   {
-    processGetRequest(array[1], socket_desc);
+    processGetRequest(array[1], client_sock);
   }
   // else if (strcmp(ptr[0], "INFO") == 0)
   // {
@@ -167,13 +167,13 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
 
   // Respond to client:
 
-  strcpy(server_message, "This is the server's response message.");
+  // strcpy(server_message, "This is the server's response message.");
 
-  if (send(client_sock, server_message, strlen(server_message), 0) < 0)
-  {
-    printf("Can't send\n");
-    // return -1;
-  }
+  // if (send(client_sock, server_message, strlen(server_message), 0) < 0)
+  // {
+  //   printf("Can't send\n");
+  //   // return -1;
+  // }
 }
 char *remove_end(char *str, char c)
 {
@@ -190,28 +190,23 @@ char *remove_end(char *str, char c)
 
 void processGetRequest(char *path, int sockfd)
 {
-  // char * token, * last;
-  char* filePath = path;
-  // last = token = strtok(path, "/");
-  // for (;(token = strtok(NULL, "/")) != NULL; last = token);
-  char *removed;
+  // char* filePath = path;
+  // char *removed;
+  // removed = remove_end(filePath, '/');
+  // printf("%s\n", removed);
   // printf("%s\n", path);
-  removed = remove_end(filePath, '/');
-  printf("%s\n", removed);
-  printf("%s\n", path);
-   printf("%s\n", filePath);
-  DIR *d;
-  struct dirent *dir;
+  // printf("%s\n", filePath);
+  // DIR *d;
+  // struct dirent *dir;
   FILE *fp;
-
-  d = opendir(filePath);
-  if (d)
-  {
-    while ((dir = readdir(d)) != NULL)
-    {
-      if (dir->d_type == DT_REG && strcmp(removed, dir->d_name) == 0)
-      {
-        printf("%s\n", dir->d_name);
+  // d = opendir(filePath);
+  // if (d)
+  // {
+    // while ((dir = readdir(d)) != NULL)
+    // {
+    //   if (dir->d_type == DT_REG && strcmp(removed, dir->d_name) == 0)
+    //   {
+    //     printf("%s\n", dir->d_name);
         fp = fopen(path, "r");
         if (fp == NULL)
         {
@@ -223,10 +218,10 @@ void processGetRequest(char *path, int sockfd)
         printf("[+]File data sent successfully.\n");
 
         printf("[+]Closing the connection.\n");
-      }
-    }
-    closedir(d);
-  }
+    //   }
+    // }
+    // closedir(d);
+ // }
   // return (0);
 }
 
