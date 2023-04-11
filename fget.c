@@ -19,9 +19,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <sys/stat.h>
+#include <time.h>
 #define SIZE 1024
 
 void processGetRequest(char *argv[], int socket_desc);
+void processInfoRequest(char *argv[], int socket_desc);
+void printFileProperties(struct stat stats);
 int main(int argc, char *argv[])
 {
   int socket_desc;
@@ -79,9 +83,12 @@ int main(int argc, char *argv[])
   {
     processGetRequest(argv, socket_desc);
   }
-  // else if(strcmp(argv[1], "INFO") == 0){
-  //     processInfoRequest();
-  // }else if(strcmp(argv[1], "MD") == 0){
+  else if (strcmp(argv[1], "INFO") == 0)
+  {
+    processInfoRequest(argv, socket_desc);
+  }
+
+  // else if(strcmp(argv[1], "MD") == 0){
   //     processMdRequest();
   // }else if(strcmp(argv[1], "PUT") == 0){
   //     processPutRequest();
@@ -130,7 +137,7 @@ void write_file(int sockfd, char *clientFilePath)
   char *filename = clientFilePath;
   char buffer[SIZE];
   // printf("File path: %s\n", clientFilePath);
-  
+
   fp = fopen(filename, "w");
   while (1)
   {
@@ -171,54 +178,99 @@ void processGetRequest(char *argv[], int socket_desc)
     client_message[k] = argv[2][i];
     i++;
   }
-  // char server_message[2000];
-  // memset(server_message,'\0',sizeof(server_message));
   printf("%s \n", client_message);
   if (send(socket_desc, client_message, clientMessageLength, 0) < 0)
   {
     printf("Unable to send message\n");
     // return -1;
   }
-  // if (recv(client_socket, buffer, BUFSIZ, 0) < 0)
-  //   {
-  //     printf("Error while receiving server's msg\n");
-
-  //   }
-  // file_size = atoi(buffer);
-
-  // if(recv(socket_desc, server_message, sizeof(server_message), 0) < 0){
-  //   printf("Error while receiving server's msg\n");
-  //   //return -1;
-  // }
   write_file(socket_desc, clientFilePath);
-  /* Receiving file size */
-  // char buffer[BUFSIZ];
-  // int file_size;
-  // FILE *received_file;
-  // int remain_data = 0;
-  // recv(socket_desc, buffer, BUFSIZ, 0);
-  // file_size = atoi(buffer);
-  // ssize_t len;
-  // // fprintf(stdout, "\nFile size : %d\n", file_size);
-  
-  // received_file = fopen(clientFilePath, "a+");
-  // if (received_file == NULL)
-  // {
-  //   fprintf(stderr, "Failed to open file foo --> %s\n", strerror(errno));
+}
 
-  //   exit(EXIT_FAILURE);
-  // }
+void processInfoRequest(char *argv[], int socket_desc)
+{
+  struct stat stats;
+  // char* clientMessage = processClientRequestInput(argv);
+  int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
 
-  // remain_data = file_size;
+  // printf("the legth of inout %d \n",clientMessageLength );
+  char client_message[clientMessageLength];
+  int i = 0;
+  for (i = 0; i < strlen(argv[1]); i++)
+  {
+    client_message[i] = argv[1][i];
+  }
 
-  // while ((remain_data > 0) && ((len = recv(socket_desc, buffer, BUFSIZ, 0)) > 0))
-  // {
-  //   printf("Check data save..\n");
-  //   fwrite(buffer, sizeof(char), len, received_file);
-  //   remain_data -= len;
-  //   printf(stdout, "Receive %d bytes and we hope :- %d bytes\n", len, remain_data);
-  //   fprintf(stdout, "Receive %d bytes and we hope :- %d bytes\n", len, remain_data);
-  // }
-  // fclose(received_file);
-  // printf("Server's response: %s\n", server_message);
+  client_message[i] = ' ';
+  int j = i + 1;
+  i = 0;
+  for (int k = j; k < strlen(argv[2]) + j; k++)
+  {
+    client_message[k] = argv[2][i];
+    i++;
+  }
+  printf("Client message is: %s \n", client_message);
+  if (send(socket_desc, client_message, clientMessageLength, 0) < 0)
+  {
+    printf("Unable to send message\n");
+    // return -1;
+  }
+
+  recv(socket_desc, &stats, SIZE, 0);
+  printFileProperties(stats);
+}
+
+/**
+ * Function to print file properties.
+ */
+void printFileProperties(struct stat stats)
+{
+  struct tm dt;
+
+  // File permissions
+  printf("\nFile access: ");
+  if (stats.st_mode & R_OK)
+    printf("read ");
+  if (stats.st_mode & W_OK)
+    printf("write ");
+  if (stats.st_mode & X_OK)
+    printf("execute");
+
+  // File size
+  printf("\nFile size: %d", stats.st_size);
+
+  // Get file creation time in seconds and
+  // convert seconds to date and time format
+  dt = *(gmtime(&stats.st_ctime));
+  printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+         dt.tm_hour, dt.tm_min, dt.tm_sec);
+
+  // File modification time
+  dt = *(gmtime(&stats.st_mtime));
+  printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+         dt.tm_hour, dt.tm_min, dt.tm_sec);
+}
+
+char *processClientRequestInput(char *argv[])
+{
+  int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
+
+  // printf("the legth of inout %d \n",clientMessageLength );
+  char client_message[clientMessageLength];
+  int i = 0;
+  for (i = 0; i < strlen(argv[1]); i++)
+  {
+    client_message[i] = argv[1][i];
+  }
+
+  client_message[i] = ' ';
+  int j = i + 1;
+  i = 0;
+  for (int k = j; k < strlen(argv[2]) + j; k++)
+  {
+    client_message[k] = argv[2][i];
+    i++;
+  }
+  printf("%s \n", client_message);
+  return client_message;
 }

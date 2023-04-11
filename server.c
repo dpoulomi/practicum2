@@ -18,6 +18,7 @@
 
 void processClientRequest(int client_sock, char client_message[8196], int socket_desc);
 void processGetRequest(char *dir, int sockfd);
+void processInfoRequest(char *path, int sockfd);
 void send_file(FILE *fp, int sockfd);
 int main(void)
 {
@@ -73,41 +74,7 @@ int main(void)
   printf("Client connected at IP: %s and port: %i\n",
          inet_ntoa(client_addr.sin_addr),
          ntohs(client_addr.sin_port));
-  // printf("%s", argv[1], argv[2]);
-
-  processClientRequest(client_sock, client_message,socket_desc);
-  // // Receive client's message:
-  // if (recv(client_sock, client_message,
-  //          sizeof(client_message), 0) < 0){
-  //   printf("Couldn't receive\n");
-  //   return -1;
-  // }
-  // printf("Msg from client: %s\n", client_message);
-
-  // // Respond to client:
-  // strcpy(server_message, "This is the server's response message.");
-
-  // if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-  //   printf("Can't send\n");
-  //   return -1;
-  // }
-  // Questin 1: fetch a file data
-  // if (recv(client_sock, client_message,
-  //          sizeof(client_message), 0) < 0){
-  //   printf("Couldn't receive\n");
-  //   return -1;
-  // }
-
-  // printf("Msg from client: %s\n", client_message);
-
-  // // Respond to client with :
-  // strcpy(server_message, "This is the server's response message.");
-
-  // if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-  //   printf("Can't send\n");
-  //   return -1;
-  // }
-  // Closing the socket:
+  processClientRequest(client_sock, client_message, socket_desc);
   close(client_sock);
   close(socket_desc);
 
@@ -136,19 +103,17 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
     array[i++] = ptr;
     ptr = strtok(NULL, " ");
   }
-  // printf("ptr 0 is: %s\n", ptr[0]);
-  // printf("ptr 1 is: %s\n", ptr[1]);
-  // while (ptr != NULL)
-  // {
-  // printf("'%s'\n", ptr);
+   printf("array 0: %s\n", array[0]);
+    printf("array 1: %s\n", array[1]);
   if (strcmp(array[0], "GET") == 0)
   {
     processGetRequest(array[1], client_sock);
   }
-  // else if (strcmp(ptr[0], "INFO") == 0)
-  // {
-  //   processInfoRequest();
-  // }
+  else if (strcmp(array[0], "INFO") == 0)
+  {
+    printf("Entering info block");
+    processInfoRequest(array[1], client_sock);
+  }
   // else if (strcmp(ptr[0], "MD") == 0)
   // {
   //   processMdRequest();
@@ -190,50 +155,50 @@ char *remove_end(char *str, char c)
 
 void processGetRequest(char *path, int sockfd)
 {
-  // char* filePath = path;
-  // char *removed;
-  // removed = remove_end(filePath, '/');
-  // printf("%s\n", removed);
-  // printf("%s\n", path);
-  // printf("%s\n", filePath);
-  // DIR *d;
-  // struct dirent *dir;
   FILE *fp;
-  // d = opendir(filePath);
-  // if (d)
-  // {
-    // while ((dir = readdir(d)) != NULL)
-    // {
-    //   if (dir->d_type == DT_REG && strcmp(removed, dir->d_name) == 0)
-    //   {
-    //     printf("%s\n", dir->d_name);
-        fp = fopen(path, "r");
-        if (fp == NULL)
-        {
-          perror("[-]Error in reading file.");
-          exit(1);
-        }
+  fp = fopen(path, "r");
+  if (fp == NULL)
+  {
+    perror("[-]Error in reading file.");
+    exit(1);
+  }
+  send_file(fp, sockfd);
+  printf("[+]File data sent successfully.\n");
 
-        send_file(fp, sockfd);
-        printf("[+]File data sent successfully.\n");
-
-        printf("[+]Closing the connection.\n");
-    //   }
-    // }
-    // closedir(d);
- // }
-  // return (0);
+  printf("[+]Closing the connection.\n");
 }
 
-void send_file(FILE *fp, int sockfd){
+void send_file(FILE *fp, int sockfd)
+{
   int n;
   char data[SIZE] = {0};
- 
-  while(fgets(data, SIZE, fp) != NULL) {
-    if (send(sockfd, data, sizeof(data), 0) == -1) {
+
+  while (fgets(data, SIZE, fp) != NULL)
+  {
+    if (send(sockfd, data, sizeof(data), 0) == -1)
+    {
       perror("[-]Error in sending file.");
       exit(1);
     }
     bzero(data, SIZE);
+  }
+}
+
+void processInfoRequest(char *path, int sockfd)
+{
+  printf("ENtered in info method");
+  struct stat stats;
+  if (stat(path, &stats) == 0)
+  {
+    if (send(sockfd, &stats, sizeof(stats), 0) == -1)
+    {
+      perror("[-]Error in sending info.");
+      exit(1);
+    }
+  }
+  else
+  {
+    printf("Unable to get file properties.\n");
+    printf("Please check whether '%s' file exists.\n", path);
   }
 }
