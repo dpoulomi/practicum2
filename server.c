@@ -264,7 +264,7 @@ void processRmRequest(char *path, int sockfd)
   char *dirname = path;
   char *server_message = malloc(200);
   int ret = 0;
-  char cmd[32] = {0};
+  char cmd[200] = {0};
   ret = rmdir(dirname);
 
   if (ret == 0)
@@ -275,38 +275,32 @@ void processRmRequest(char *path, int sockfd)
   else
   {
     //  strcpy (server_message,"Unable to remove directory");
-    printf("Unable to remove directory %s\n", dirname);
+    // printf("Unable to remove directory %s\n", dirname);
     sprintf(cmd, "rm -rf %s", dirname);
-    printf("test");
+
     if (system(cmd) == 0)
     {
-      printf("Non empty folder has been deleted..\n");
+      printf("Specified path folder/file has been deleted..\n");
+      strcpy(server_message, "Non empty folder has been deleted..");
     }
     else
     {
       if (remove(path) == 0)
       {
         printf("Deleted file successfully\n");
-      }  else
+        strcpy(server_message, "Deleted file successfully");
+      }
+      else
       {
         printf("Unable to delete anything.");
+        strcpy(server_message, "Unable to delete anything.");
       }
     }
 
-    // else
-    // {
-      // if (rmrf(path) == 0)
-      // sprintf(cmd, "rm -rf %s", dirname);
-      // if (system(cmd) == 0)
-      //   {
-      //     printf("Non empty folder has been deleted..\n");
-      //   }
-      // else
-      // {
-      //   printf("Unable to delete non empty folder.");
-      // }
-      // printf("Unable to delete the file");
-   // }
+    if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
+    {
+      printf("Can't send\n");
+    }
   }
 }
 
