@@ -14,6 +14,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <ftw.h>
 #define SIZE 1024
 
 void processClientRequest(int client_sock, char client_message[8196], int socket_desc);
@@ -22,6 +23,9 @@ void processInfoRequest(char *path, int sockfd);
 void send_file(FILE *fp, int sockfd);
 void processMDRequest(char *path, int sockfd);
 void processPutRequest(char *path, int sockfd);
+void processRmRequest(char *path, int sockfd);
+int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+int rmrf(char *path);
 int main(void)
 {
   int socket_desc, client_sock;
@@ -124,10 +128,10 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
   {
     processPutRequest(array[1], client_sock);
   }
-  // else if (strcmp(ptr[0], "RM") == 0)
-  // {
-  //   processRmRequest();
-  // }
+  else if (strcmp(array[0], "RM") == 0)
+  {
+    processRmRequest(array[1], client_sock);
+  }
 
   // ptr = strtok(NULL, " ");
   // }
@@ -210,8 +214,8 @@ void processMDRequest(char *path, int sockfd)
   printf("Entered in MD method\n");
   int check;
   char *dirname = path;
-   char server_message[2000];
-    memset(server_message, '\0', sizeof(server_message));
+  char server_message[2000];
+  memset(server_message, '\0', sizeof(server_message));
   check = mkdir(dirname, 0777);
   // check if directory is created or not
   if (!check)
@@ -232,7 +236,6 @@ void processMDRequest(char *path, int sockfd)
   }
 }
 
-
 void processPutRequest(char *path, int sockfd)
 {
   printf("Entered in PUT method\n");
@@ -241,9 +244,11 @@ void processPutRequest(char *path, int sockfd)
   char *filename = path;
   char buffer[SIZE];
   fp = fopen(filename, "w");
-  while (1) {
+  while (1)
+  {
     n = recv(sockfd, buffer, SIZE, 0);
-    if (n <= 0){
+    if (n <= 0)
+    {
       break;
       return;
     }
@@ -253,4 +258,69 @@ void processPutRequest(char *path, int sockfd)
   return;
 }
 
+void processRmRequest(char *path, int sockfd)
+{
+  printf("Entered in RM method\n");
+  char *dirname = path;
+  char *server_message = malloc(200);
+  int ret = 0;
+  char cmd[32] = {0};
+  ret = rmdir(dirname);
 
+  if (ret == 0)
+  {
+    strcpy(server_message, "Given empty directory removed successfully");
+    printf("Given empty directory removed successfully\n");
+  }
+  else
+  {
+    //  strcpy (server_message,"Unable to remove directory");
+    printf("Unable to remove directory %s\n", dirname);
+    sprintf(cmd, "rm -rf %s", dirname);
+    printf("test");
+    if (system(cmd) == 0)
+    {
+      printf("Non empty folder has been deleted..\n");
+    }
+    else
+    {
+      if (remove(path) == 0)
+      {
+        printf("Deleted file successfully\n");
+      }  else
+      {
+        printf("Unable to delete anything.");
+      }
+    }
+
+    // else
+    // {
+      // if (rmrf(path) == 0)
+      // sprintf(cmd, "rm -rf %s", dirname);
+      // if (system(cmd) == 0)
+      //   {
+      //     printf("Non empty folder has been deleted..\n");
+      //   }
+      // else
+      // {
+      //   printf("Unable to delete non empty folder.");
+      // }
+      // printf("Unable to delete the file");
+   // }
+  }
+}
+
+int rmrf(char *path)
+{
+  return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+}
+
+int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+  int rv = remove(fpath);
+
+  if (rv)
+    perror(fpath);
+
+  return rv;
+}
