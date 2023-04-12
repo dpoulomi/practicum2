@@ -20,6 +20,8 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
 void processGetRequest(char *dir, int sockfd);
 void processInfoRequest(char *path, int sockfd);
 void send_file(FILE *fp, int sockfd);
+void processMDRequest(char *path, int sockfd);
+void processPutRequest(char *path, int sockfd);
 int main(void)
 {
   int socket_desc, client_sock;
@@ -103,8 +105,8 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
     array[i++] = ptr;
     ptr = strtok(NULL, " ");
   }
-   printf("array 0: %s\n", array[0]);
-    printf("array 1: %s\n", array[1]);
+  printf("array 0: %s\n", array[0]);
+  printf("array 1: %s\n", array[1]);
   if (strcmp(array[0], "GET") == 0)
   {
     processGetRequest(array[1], client_sock);
@@ -114,14 +116,14 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
     printf("Entering info block");
     processInfoRequest(array[1], client_sock);
   }
-  // else if (strcmp(ptr[0], "MD") == 0)
-  // {
-  //   processMdRequest();
-  // }
-  // else if (strcmp(ptr[0], "PUT") == 0)
-  // {
-  //   processPutRequest();
-  // }
+  else if (strcmp(array[0], "MD") == 0)
+  {
+    processMDRequest(array[1], client_sock);
+  }
+  else if (strcmp(array[0], "PUT") == 0)
+  {
+    processPutRequest(array[1], client_sock);
+  }
   // else if (strcmp(ptr[0], "RM") == 0)
   // {
   //   processRmRequest();
@@ -202,3 +204,53 @@ void processInfoRequest(char *path, int sockfd)
     printf("Please check whether '%s' file exists.\n", path);
   }
 }
+
+void processMDRequest(char *path, int sockfd)
+{
+  printf("Entered in MD method\n");
+  int check;
+  char *dirname = path;
+   char server_message[2000];
+    memset(server_message, '\0', sizeof(server_message));
+  check = mkdir(dirname, 0777);
+  // check if directory is created or not
+  if (!check)
+  {
+    strcpy(server_message, "Directory created.");
+    printf("Directory created\n");
+  }
+  else
+  {
+    strcpy(server_message, "Unable to create directory.");
+    printf("Unable to create directory\n");
+    exit(1);
+  }
+
+  if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
+  {
+    printf("Can't send\n");
+  }
+}
+
+
+void processPutRequest(char *path, int sockfd)
+{
+  printf("Entered in PUT method\n");
+  int n;
+  FILE *fp;
+  char *filename = path;
+  char buffer[SIZE];
+  fp = fopen(filename, "w");
+  while (1) {
+    n = recv(sockfd, buffer, SIZE, 0);
+    if (n <= 0){
+      break;
+      return;
+    }
+    fprintf(fp, "%s", buffer);
+    bzero(buffer, SIZE);
+  }
+  return;
+}
+
+

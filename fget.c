@@ -26,6 +26,9 @@
 void processGetRequest(char *argv[], int socket_desc);
 void processInfoRequest(char *argv[], int socket_desc);
 void printFileProperties(struct stat stats);
+void processMDRequest(char *argv[], int socket_desc);
+void processPutRequest(char *argv[], int socket_desc);
+void send_file(FILE *fp, int sockfd);
 int main(int argc, char *argv[])
 {
   int socket_desc;
@@ -59,26 +62,6 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf("Connected with server successfully\n");
-
-  // Get input from the user:
-  // printf("Enter message: ");
-  // gets(client_message);
-
-  // // Send the message to server:
-  // if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
-  //   printf("Unable to send message\n");
-  //   return -1;
-  // }
-
-  // // Receive the server's response:
-  // if(recv(socket_desc, server_message, sizeof(server_message), 0) < 0){
-  //   printf("Error while receiving server's msg\n");
-  //   return -1;
-  // }
-
-  // printf("Server's response: %s\n",server_message);
-
-  char *operation = argv[1];
   if (strcmp(argv[1], "GET") == 0)
   {
     processGetRequest(argv, socket_desc);
@@ -87,42 +70,17 @@ int main(int argc, char *argv[])
   {
     processInfoRequest(argv, socket_desc);
   }
+  else if (strcmp(argv[1], "MD") == 0)
+  {
+    processMDRequest(argv, socket_desc);
+  }
+  else if(strcmp(argv[1], "PUT") == 0){
 
-  // else if(strcmp(argv[1], "MD") == 0){
-  //     processMdRequest();
-  // }else if(strcmp(argv[1], "PUT") == 0){
-  //     processPutRequest();
-  // }else if(strcmp(argv[1], "RM") == 0){
+      processPutRequest(argv, socket_desc);
+  }
+  //else if(strcmp(argv[1], "RM") == 0){
   //     processRmRequest();
   // }
-
-  // allow you to send a command to the server for reading a file from the server's file storage area
-  //  printf("Enter client command to send a command to the server for reading a file from the server's file storage area: \n");
-  //  //% fget GET folder/foo.txt data/localfoo.txt
-  //  gets(client_message);
-  //  if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
-  //    printf("Unable to send message\n");
-  //    return -1;
-  //  }
-  //  if(recv(socket_desc, server_message, sizeof(server_message), 0) < 0){
-  //    printf("Error while receiving server's msg\n");
-  //    return -1;
-  //  }
-  //  printf("Server's response: %s\n",server_message);
-
-  // //a command that gets all file information about a file,such as ownership, data of last modification, permissions, size, etc
-  //  printf("Enter client command to get file information about reading a file from the server's file storage area: \n");
-  // //% fget GET folder/foo.txt data/localfoo.txt
-  // gets(client_message);
-  // if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
-  //   printf("Unable to send message\n");
-  //   return -1;
-  // }
-  // if(recv(socket_desc, server_message, sizeof(server_message), 0) < 0){
-  //   printf("Error while receiving server's msg\n");
-  //   return -1;
-  // }
-  // printf("Server's response: %s\n",server_message);
 
   // Close the socket:
   close(socket_desc);
@@ -159,6 +117,11 @@ void processGetRequest(char *argv[], int socket_desc)
   // char* server_filepath;
   FILE *fp;
   char *clientFilePath = argv[3];
+  if (strcmp(argv[3], "") == 0)
+  {
+    clientFilePath = argv[2];
+  }
+
   printf("Client file path is %s \n", clientFilePath);
   int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
 
@@ -185,6 +148,40 @@ void processGetRequest(char *argv[], int socket_desc)
     // return -1;
   }
   write_file(socket_desc, clientFilePath);
+}
+
+void processMDRequest(char *argv[], int socket_desc)
+{
+  // char* clientMessage = processClientRequestInput(argv);
+  int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
+
+  // printf("the legth of inout %d \n",clientMessageLength );
+  char client_message[clientMessageLength];
+  int i = 0;
+  for (i = 0; i < strlen(argv[1]); i++)
+  {
+    client_message[i] = argv[1][i];
+  }
+
+  client_message[i] = ' ';
+  int j = i + 1;
+  i = 0;
+  for (int k = j; k < strlen(argv[2]) + j; k++)
+  {
+    client_message[k] = argv[2][i];
+    i++;
+  }
+  printf("Client message is: %s \n", client_message);
+  if (send(socket_desc, client_message, clientMessageLength, 0) < 0)
+  {
+    printf("Unable to send message\n");
+  }
+   char server_message[2000];
+     memset(server_message, '\0', sizeof(server_message));
+  if (recv(socket_desc, server_message, sizeof(server_message), 0) < 0)
+  {
+    printf("Server message for folder creation: %s\n", server_message);
+  }
 }
 
 void processInfoRequest(char *argv[], int socket_desc)
@@ -273,4 +270,57 @@ char *processClientRequestInput(char *argv[])
   }
   printf("%s \n", client_message);
   return client_message;
+}
+
+void processPutRequest(char *argv[], int socket_desc)
+{
+  // char* clientMessage = processClientRequestInput(argv);
+  int clientMessageLength = strlen(argv[1]) + strlen(argv[3]) + 1;
+
+  // printf("the legth of inout %d \n",clientMessageLength );
+  char client_message[clientMessageLength];
+  int i = 0;
+  for (i = 0; i < strlen(argv[1]); i++)
+  {
+    client_message[i] = argv[1][i];
+  }
+
+  client_message[i] = ' ';
+  int j = i + 1;
+  i = 0;
+  for (int k = j; k < strlen(argv[3]) + j; k++)
+  {
+    client_message[k] = argv[3][i];
+    i++;
+  }
+  printf("Client message is: %s \n", client_message);
+  // if (send(socket_desc, client_message, clientMessageLength, 0) < 0)
+  // {
+  //   printf("Unable to send message\n");
+  // }
+
+
+   FILE *fp;
+  char *filename = argv[2];
+  fp = fopen(filename, "r");
+  if (fp == NULL) {
+    perror("[-]Error in reading file.");
+    exit(1);
+  }
+  send_file(fp, socket_desc);
+  printf("[+]File data sent successfully.\n");
+  
+}
+
+void send_file(FILE *fp, int sockfd){
+  int n;
+  char data[SIZE] = {0};
+ 
+  while(fgets(data, SIZE, fp) != NULL) {
+    if (send(sockfd, data, sizeof(data), 0) == -1) {
+      perror("[-]Error in sending file.");
+      exit(1);
+    }
+    bzero(data, SIZE);
+  }
 }
