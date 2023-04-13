@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <ftw.h>
+#include <fcntl.h>
 #define SIZE 1024
 
 void processClientRequest(int client_sock, char client_message[8196], int socket_desc);
@@ -23,6 +24,7 @@ void processInfoRequest(char *path, int sockfd);
 void send_file(FILE *fp, int sockfd);
 void processMDRequest(char *path, int sockfd);
 void processPutRequest(char *path, int sockfd);
+char *processPutRequestForOtherDevice(char *path, int sockfd);
 void processRmRequest(char *path, int sockfd);
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 int rmrf(char *path);
@@ -238,25 +240,116 @@ void processMDRequest(char *path, int sockfd)
 
 void processPutRequest(char *path, int sockfd)
 {
-  printf("Entered in PUT method\n");
-  int n;
   FILE *fp;
   char *filename = path;
+  //  printf("Original filepath is: %s", path);
   char buffer[SIZE];
+  int src_fd, dst_fd, err;
+  src_fd = open(path, O_RDONLY);
+
   fp = fopen(filename, "w");
+  printf("filename :%s $\n", filename);
+  char *secondPath = processPutRequestForOtherDevice(path, sockfd);
+  printf("second filename is %s $ and length: %d\n", secondPath, strlen(secondPath));
+
+  int n;
+
+  FILE *fp1;
+  // char *filename = path;
+
+  fp1 = fopen(secondPath, "w"); // "/Volumes/USB2/test_folder4/test_server_put152.c"
   while (1)
   {
     n = recv(sockfd, buffer, SIZE, 0);
     if (n <= 0)
     {
       break;
-      return;
     }
+    // printf("First Buffer: %s\n", buffer);
     fprintf(fp, "%s", buffer);
+    // printf("Second Buffer: %s\n", buffer);
+    fprintf(fp1, "%s", buffer);
+    //  printf( "Buffer is %s", buffer);
+  
     bzero(buffer, SIZE);
   }
+  fclose(fp);
+  fclose(fp1);
+
+ 
+  // int n1=0;
+  //   dst_fd = open(secondPath, O_CREAT | O_WRONLY);
+
+  //   while (1) {
+  //       err = read(src_fd, buffer, 4096);
+  //       if (err == -1) {
+  //           printf("Error reading file.\n");
+  //           exit(1);
+  //       }
+  //       n1 = err;
+
+  //       if (n1 == 0) break;
+
+  //       err = write(dst_fd, buffer, n1);
+  //       if (err == -1) {
+  //           printf("Error writing to file.\n");
+  //           exit(1);
+  //       }
+  //   }
+
+  //   close(src_fd);
+  //   close(dst_fd);
+
   return;
 }
+
+char *processPutRequestForOtherDevice(char *path, int sockfd)
+{
+  char string[99];
+
+  char *token; // in your original code allocate memory to pointer string
+  token = strtok(path, "/");
+  char *ch = "/";
+  size_t n;
+  n = 0; 
+  while (token != NULL)
+  {
+    // char temp[20];
+               // calculate string length
+    if (strcmp(token, "USB1") == 0) // if "dog" found
+      strcpy(&string[n ], "/USB2");  // add "bird " at that position
+    else if (strcmp(token, "USB2") == 0)
+      strcpy(&string[n], "/USB1");
+    // if doesn't add token
+    else
+    {
+
+      printf("The token is %s\n", token);
+      printf("the digit is %d\n", n);
+      strcpy(&string[n], "/");
+      strcpy(&string[n + 1], token);
+    }
+     n = strlen(string); 
+    token = strtok(NULL, "/");
+  }
+  printf("The token is %s\n", token);
+  printf("The string  is %s \n", &string);
+  // processPutRequest(string, sockfd);
+  //string[strlen(string)] = '\0';
+  int i = 0;
+  // printf("\n$");
+
+  while (string[i] != '\0'){
+    printf("(%c, %d) ", string[i], i);
+    i++;
+  }
+  printf("\n");
+
+  return string;
+
+}
+
+
 
 void processRmRequest(char *path, int sockfd)
 {
