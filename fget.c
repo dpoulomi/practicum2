@@ -100,6 +100,12 @@ void write_file(int sockfd, char *clientFilePath)
   // printf("File path: %s\n", clientFilePath);
 
   fp = fopen(filename, "w");
+  if (fp == NULL)
+  {
+    printf("File path does not exist. Please create the file path first.");
+    perror("Error");
+    exit(1);
+  }
   while (1)
   {
     printf("Check data save..\n");
