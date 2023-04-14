@@ -23,11 +23,11 @@
 #include <time.h>
 #define SIZE 1024
 
-void processGetRequest(char *argv[], int socket_desc);
+void processGetRequest(char *argv[], int socket_desc, int argc);
 void processInfoRequest(char *argv[], int socket_desc);
 void printFileProperties(struct stat stats);
 void processMDRequest(char *argv[], int socket_desc);
-void processPutRequest(char *argv[], int socket_desc);
+void processPutRequest(char *argv[], int socket_desc, int argc);
 void send_file(FILE *fp, int sockfd);
 void processRmRequest(char *argv[], int socket_desc);
 int main(int argc, char *argv[])
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   printf("Connected with server successfully\n");
   if (strcmp(argv[1], "GET") == 0)
   {
-    processGetRequest(argv, socket_desc);
+    processGetRequest(argv, socket_desc, argc);
   }
   else if (strcmp(argv[1], "INFO") == 0)
   {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   else if (strcmp(argv[1], "PUT") == 0)
   {
 
-    processPutRequest(argv, socket_desc);
+    processPutRequest(argv, socket_desc, argc);
   }
   else if (strcmp(argv[1], "RM") == 0)
   {
@@ -102,7 +102,7 @@ void write_file(int sockfd, char *clientFilePath)
   fp = fopen(filename, "w");
   if (fp == NULL)
   {
-    printf("File path does not exist. Please create the file path first.");
+    printf("File path does not exist. Please create the file path first.\n");
     perror("Error");
     exit(1);
   }
@@ -121,14 +121,27 @@ void write_file(int sockfd, char *clientFilePath)
   return;
 }
 
-void processGetRequest(char *argv[], int socket_desc)
+void processGetRequest(char *argv[], int socket_desc, int argc)
 {
   // char* server_filepath;
   FILE *fp;
-  char *clientFilePath = argv[3];
-  if (strcmp(argv[3], "") == 0)
+  char *clientFilePath;
+
+  if (argc == 3)
   {
-    clientFilePath = argv[2];
+    // printf("test get with local path mehtioned\n %s", argv);
+    char* clientPathPrefix = "/Users/neo";
+    // clientFilePath = argv[2];
+    // strcat(clientPathPrefix, clientFilePath);
+
+    clientFilePath = malloc(strlen(clientPathPrefix) + strlen(argv[2]) + 1);
+     strcpy(clientFilePath, clientPathPrefix);
+    strcat(clientFilePath, argv[2]);
+    // printf("The client path using remote file path is: %s", clientFilePath);
+  }
+  else
+  {
+    clientFilePath = argv[3];
   }
 
   printf("Client file path is %s \n", clientFilePath);
@@ -281,13 +294,16 @@ char *processClientRequestInput(char *argv[])
   return client_message;
 }
 
-void processPutRequest(char *argv[], int socket_desc)
+void processPutRequest(char *argv[], int socket_desc, int argc)
 {
   // char* clientMessage = processClientRequestInput(argv);
   int clientMessageLength = 0;
-  if (strcmp(argv[3], "") == 0)
+  char *folderPrefix;
+  if (argc == 3)
   {
-    clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
+    folderPrefix = "/Volumes/USB1";
+    clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1 + strlen(folderPrefix);
+    printf("Client message length is %d", strlen(folderPrefix));
   }
   else
   {
@@ -296,9 +312,12 @@ void processPutRequest(char *argv[], int socket_desc)
 
   // printf("the legth of inout %d \n",clientMessageLength );
   char client_message[clientMessageLength];
-  if (strcmp(argv[3], "") == 0)
+  if (argc == 3)
   {
+
     int i = 0;
+    int k;
+
     for (i = 0; i < strlen(argv[1]); i++)
     {
       client_message[i] = argv[1][i];
@@ -307,11 +326,19 @@ void processPutRequest(char *argv[], int socket_desc)
     client_message[i] = ' ';
     int j = i + 1;
     i = 0;
+    for (k = j; k < strlen(folderPrefix) + j; k++)
+    {
+      client_message[k] = folderPrefix[i];
+      i++;
+    }
+    j = k;
+    i = 0;
     for (int k = j; k < strlen(argv[2]) + j; k++)
     {
       client_message[k] = argv[2][i];
       i++;
     }
+    //  printf("Remote file path missing so updated path as per local path is %s", client_message);
   }
   else
   {

@@ -260,6 +260,12 @@ void processPutRequest(char *path, int sockfd)
 
 
   fp = fopen(filename, "w");
+  if (fp == NULL)
+  {
+    // printf("First file path does not exist. Please create the file path first.\n");
+    perror("Error");
+    exit(1);
+  }
   printf("filename :%s \n", filename);
   char *secondPath = processRequestForOtherDevice(path);
   printf("second filename is %s and length: %d\n", secondPath, strlen(secondPath));
@@ -272,7 +278,28 @@ void processPutRequest(char *path, int sockfd)
   // }
   // printf("The comparison is : %d",  strcmp(secondPath, "/Volumes/USB2/test_folder4/test_server_put173.c"));
 
+//  int check;
+//  char * folder_path =  remove_end(secondPath, '/');
+//    check = mkdir(secondPath, 0777);
   fp1 = fopen(secondPath, "w"); // "/Volumes/USB2/test_folder4/test_server_put172.c"
+  if (fp1 == NULL)
+{
+    // printf("Second file path does not exist. Please create the file path first.\n");
+    perror("Error");
+    exit(1);
+  }
+  // check if directory is created or not
+  // if (!check)
+  // {
+   
+  //   printf("Mirrored directory created\n");
+  // }
+  // else
+  // {
+   
+  //   printf("Unable to create mirrored directory\n");
+  //   exit(1);
+  // }
   while (1)
   {
     n = recv(sockfd, buffer, SIZE, 0);
