@@ -1,8 +1,6 @@
 /*
  * client.c -- TCP Socket Client
  *
- * adapted from:
- *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
  */
 
 #include <stdio.h>
@@ -30,11 +28,28 @@ void processMDRequest(char *argv[], int socket_desc);
 void processPutRequest(char *argv[], int socket_desc, int argc);
 void send_file(FILE *fp, int sockfd);
 void processRmRequest(char *argv[], int socket_desc);
+
+struct user_input
+{
+	char *argv[];
+  int socket_desc;
+  int argc;
+};
+
+/*
+ * Main function 
+ * @argument argc which indicates no of arguments
+ * @argument argv which indicates the input arguments
+ * @returns a int value
+ */
 int main(int argc, char *argv[])
 {
   int socket_desc;
   struct sockaddr_in server_addr;
   char server_message[2000], client_message[2000];
+  pthread_t tid[2];
+  pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
+	pthread_join(tid[0], (void *)&address);
 
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
@@ -63,9 +78,15 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf("Connected with server successfully\n");
+  struct user_input  input;
+	mallocdata2.values = data1;
+	mallocdata2.size = 4;
+  
   if (strcmp(argv[1], "GET") == 0)
   {
-    processGetRequest(argv, socket_desc, argc);
+    pthread_create(&(tid[1]), NULL, &processGetRequest, (void *)&input);
+	  pthread_join(tid[1], (void *)&address);
+   // processGetRequest(argv, socket_desc, argc);
   }
   else if (strcmp(argv[1], "INFO") == 0)
   {
@@ -91,6 +112,12 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+/*
+ * Writes the data to a local file by getting the content from the server. 
+ * @argument int type socket
+ * @argument local path to which the data has to be saved.
+ * @returns void
+ */
 void write_file(int sockfd, char *clientFilePath)
 {
   int n;
@@ -121,6 +148,13 @@ void write_file(int sockfd, char *clientFilePath)
   return;
 }
 
+/*
+ * Gets data to a local file by getting the content from the server. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @argument int number of arguments
+ * @returns void
+ */
 void processGetRequest(char *argv[], int socket_desc, int argc)
 {
   // char* server_filepath;
@@ -172,6 +206,12 @@ void processGetRequest(char *argv[], int socket_desc, int argc)
   write_file(socket_desc, clientFilePath);
 }
 
+/*
+ * Makes a directory in the server. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processMDRequest(char *argv[], int socket_desc)
 {
   // char* clientMessage = processClientRequestInput(argv);
@@ -206,6 +246,12 @@ void processMDRequest(char *argv[], int socket_desc)
   }
 }
 
+/*
+ * Get folder or file info from server 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processInfoRequest(char *argv[], int socket_desc)
 {
   struct stat stats;
@@ -270,6 +316,12 @@ void printFileProperties(struct stat stats)
          dt.tm_hour, dt.tm_min, dt.tm_sec);
 }
 
+/*
+ * Makes a directory in the server. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 char *processClientRequestInput(char *argv[])
 {
   int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
@@ -294,6 +346,13 @@ char *processClientRequestInput(char *argv[])
   return client_message;
 }
 
+/*
+ * Puts a file to the server from local disk. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @int number of arguments
+ * @returns void
+ */
 void processPutRequest(char *argv[], int socket_desc, int argc)
 {
   // char* clientMessage = processClientRequestInput(argv);
@@ -376,6 +435,12 @@ void processPutRequest(char *argv[], int socket_desc, int argc)
   printf("[+]File data sent successfully.\n");
 }
 
+/*
+ * Sends file to the server from local disk. 
+ * @argument file pointer
+ * @argument int socket
+ * @returns void
+ */
 void send_file(FILE *fp, int sockfd)
 {
   int n;
@@ -392,6 +457,12 @@ void send_file(FILE *fp, int sockfd)
   }
 }
 
+/*
+ * Removes a file or folder from remote system.
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processRmRequest(char *argv[], int socket_desc)
 {
   int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;

@@ -1,0 +1,1 @@
+typedef struct user_input input;

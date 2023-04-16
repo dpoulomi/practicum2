@@ -29,12 +29,19 @@ void processRmRequest(char *path, int sockfd);
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 void copyFileToOtherUSB(char *path, char *secondPath);
 int rmrf(char *path);
+
+/*
+ * Main function 
+ * @argument void
+ * @returns a int value
+ */
 int main(void)
 {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   char server_message[8196], client_message[8196];
+  pthread_t tid;
 
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
@@ -89,6 +96,14 @@ int main(void)
 
   return 0;
 }
+
+/*
+ * Takes in input arguments from the client and redirects to appropriate method functionality. 
+ * @argument int socket
+ * @argument formatted client message
+ * @argument int client socket
+ * @returns void
+ */
 void processClientRequest(int client_sock, char client_message[8196], int socket_desc)
 {
 
@@ -162,6 +177,12 @@ char *remove_end(char *str, char c)
   return NULL; /* c wasn't found in the string */
 }
 
+/*
+ * Gets data to a local file by getting the content from the server. 
+ * @argument path from where the data needs to be fetched
+ * @argument int socket
+ * @returns void
+ */
 void processGetRequest(char *path, int sockfd)
 {
   FILE *fp;
@@ -171,6 +192,7 @@ void processGetRequest(char *path, int sockfd)
   {
     char *otherDevicePath = processRequestForOtherDevice(path);
     fp = fopen(otherDevicePath, "r");
+    printf("Fetching data from other device at path %s\n", otherDevicePath);
     if (fp == NULL)
     {
       perror("[-]Error in reading file.");
@@ -183,6 +205,12 @@ void processGetRequest(char *path, int sockfd)
   printf("[+]Closing the connection.\n");
 }
 
+/*
+ * Sends file to the client. 
+ * @argument file pointer
+ * @argument int socket
+ * @returns void
+ */
 void send_file(FILE *fp, int sockfd)
 {
   int n;
@@ -199,6 +227,12 @@ void send_file(FILE *fp, int sockfd)
   }
 }
 
+/*
+ * Send folder or file info to client 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processInfoRequest(char *path, int sockfd)
 {
   printf("ENtered in info method");
@@ -218,6 +252,13 @@ void processInfoRequest(char *path, int sockfd)
   }
 }
 
+
+/*
+ * Makes a directory in the server. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processMDRequest(char *path, int sockfd)
 {
   printf("Entered in MD method\n");
@@ -245,6 +286,12 @@ void processMDRequest(char *path, int sockfd)
   }
 }
 
+/*
+ * Puts a file to the server from local disk. 
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processPutRequest(char *path, int sockfd)
 {
   FILE *fp;
@@ -370,6 +417,11 @@ printf("second filename is %s and length: %d\n", secondPath, strlen(secondPath))
   fclose(fptr2);
 }
 
+/*
+ * Creates path for the altenative USB device for mirroring
+ * @argument original string path provided by the user
+ * @returns the alternate path of the other USB device
+ */
 char *processRequestForOtherDevice(char *path)
 {
   // char string[100];
@@ -443,6 +495,12 @@ char *processRequestForOtherDevice(char *path)
   return secondPath;
 }
 
+/*
+ * Removes a file or folder from remote system.
+ * @argument input arguments by user
+ * @argument int socket
+ * @returns void
+ */
 void processRmRequest(char *path, int sockfd)
 {
   printf("Entered in RM method\n");
