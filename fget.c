@@ -315,7 +315,7 @@ void printFileProperties(struct stat stats)
 
   // File modification time
   dt = *(gmtime(&stats.st_mtime));
-  printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+  printf("\nModified on: %d-%d-%d %d:%d:%d\n", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
          dt.tm_hour, dt.tm_min, dt.tm_sec);
 }
 

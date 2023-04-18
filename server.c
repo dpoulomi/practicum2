@@ -19,10 +19,10 @@
 #include <stdbool.h>
 #include <time.h>
 
-#define TIME_TO_WAIT 20
+#define TIME_TO_WAIT 5
 #define SIZE 1024
-#define USB1 "/Volumes/USB1"
-#define USB2 "/Volumes/USB2"
+#define USB1 "/Volumes/USB1/"
+#define USB2 "/Volumes/USB2/"
 
 // clock_t last = clock();
 void processClientRequest(int client_sock, char client_message[8196], int socket_desc);
@@ -43,10 +43,9 @@ struct Server_filesystem
   // char* USB1 = "USB1";
   // char* USB2 = "USB2";
   int USB1Available;
-
   int USB2Available;
-  ;
-  int synced;
+  int syncUSB1;
+  int syncUSB2;
 };
 struct Server_filesystem serverInfo;
 
@@ -66,8 +65,8 @@ int main(void)
   // struct Server_filesystem serverInfo;
   serverInfo.USB1Available = 0;
   serverInfo.USB2Available = 0;
-  serverInfo.synced = 0;
-
+  serverInfo.syncUSB1 = 0;
+  serverInfo.syncUSB2 = 0;
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
   memset(client_message, '\0', sizeof(client_message));
@@ -107,7 +106,8 @@ int main(void)
     // pthread_t tid;
     // pthread_create(&tid, NULL, &threadproc, (* void)  &serverInfo);
     clock_t current = clock();
-    if (current >= (last + TIME_TO_WAIT * CLOCKS_PER_SEC))
+    // if (current >= (last + TIME_TO_WAIT * CLOCKS_PER_SEC))
+    if (current >= (last + TIME_TO_WAIT))
     {
       checkServerAvailability(); /* insert your function here */
       last = current;
@@ -156,33 +156,55 @@ int main(void)
 
 void checkServerAvailability()
 {
-  printf("Server syncing method called..");
-  // 
+  printf("Server syncing method called..\n");
+  //
   struct stat stats;
   if (stat(USB1, &stats) == -1)
   {
-    serverInfo.USB1Available = false;
-    serverInfo.synced = false;
+    printf("USB1 is missing.\n");
+    serverInfo.USB1Available = 1;
+    serverInfo.syncUSB1 = 1;
+  }
+  else
+  {
+    printf("USB1 is available.\n");
+    serverInfo.USB1Available = 0;
+    // serverInfo.synced = 0;
   }
   if (stat(USB2, &stats) == -1)
   {
-    serverInfo.USB2Available = false;
-    serverInfo.synced = false;
+    printf("USB2 is missing.\n");
+    serverInfo.USB2Available = 1;
+    serverInfo.syncUSB2 = 1;
   }
-  if (serverInfo.USB1Available && !serverInfo.USB2Available)
+  else
   {
-    if (!serverInfo.synced)
+    printf("USB2 is available.\n");
+    serverInfo.USB2Available = 0;
+    // serverInfo.synced = 0;
+  }
+  if (serverInfo.USB1Available == 0 && serverInfo.USB2Available == 0)
+  {
+    if (serverInfo.syncUSB2 == 1)
     {
+      printf("USB2 to be synced.\n");
       system("rsync -avu " USB1 " " USB2);
+       serverInfo.syncUSB2 = 0;
     }
-  }
-  else if (!serverInfo.USB1Available && serverInfo.USB2Available)
-  {
-    if (!serverInfo.synced)
+    else if (serverInfo.syncUSB1 == 1)
     {
+      printf("USB1 to be synced.\n");
       system("rsync -avu " USB2 " " USB1);
+       serverInfo.syncUSB1 = 0;
     }
   }
+  // else if (!serverInfo.USB1Available && serverInfo.USB2Available)
+  // {
+  //   if (!serverInfo.synced)
+  //   {
+  //     system("rsync -avu " USB2 " " USB1);
+  //   }
+  // }
 }
 
 /*
@@ -422,9 +444,9 @@ void processPutRequest(char *path, int sockfd)
   fp = fopen(filename, "w");
   if (fp == NULL)
   {
-    // printf("First file path does not exist. Please create the file path first.\n");
-    perror("Error");
-    exit(1);
+    printf("First file path does not exist. Please create the file path first.\n");
+    // perror("Error");
+    // exit(1);
   }
   printf("filename :%s \n", filename);
   char *secondPath = processRequestForOtherDevice(path);
@@ -444,9 +466,9 @@ void processPutRequest(char *path, int sockfd)
   fp1 = fopen(secondPath, "w"); // "/Volumes/USB2/test_folder4/test_server_put172.c"
   if (fp1 == NULL)
   {
-    // printf("Second file path does not exist. Please create the file path first.\n");
-    perror("Error");
-    exit(1);
+    printf("Second file path does not exist. Please create the file path first.\n");
+    // perror("Error");
+    // exit(1);
   }
   // check if directory is created or not
   // if (!check)
@@ -468,15 +490,27 @@ void processPutRequest(char *path, int sockfd)
       break;
     }
     // printf("First Buffer: %s\n", buffer);
-    fprintf(fp, "%s", buffer);
+    if (fp != NULL)
+    {
+      fprintf(fp, "%s", buffer);
+    }
     // printf("Second Buffer: %s\n", buffer);
-    fprintf(fp1, "%s", buffer);
+    if (fp1 != NULL)
+    {
+      fprintf(fp1, "%s", buffer);
+    }
     //  printf( "Buffer is %s", buffer);
 
     bzero(buffer, SIZE);
   }
-  fclose(fp);
-  fclose(fp1);
+  if (fp != NULL)
+  {
+    fclose(fp);
+  }
+  if (fp1 != NULL)
+  {
+    fclose(fp1);
+  }
   // char *secondPath = processPutRequestForOtherDevice(path, sockfd);
   // copyFileToOtherUSB(path, secondPath);
 
@@ -660,8 +694,8 @@ void processRmRequest(char *path, int sockfd)
     }
   }
 
-  //for other USB
-   if (ret2 == 0)
+  // for other USB
+  if (ret2 == 0)
   {
     strcpy(server_message, "Given empty directory removed successfully");
     printf("Given empty directory removed successfully\n");
