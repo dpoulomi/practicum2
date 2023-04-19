@@ -6,5 +6,6 @@ server: server.c
 client: fget.c
 	gcc fget.c -o fget
 
-test:test.c
-	gcc test.c -o test
+multiclient_execution: multiclient_execution.c
+	gcc multiclient_execution.c -o multiclient_execution
+

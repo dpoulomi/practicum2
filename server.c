@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <time.h>
+#include <pthread.h>
 
 #define TIME_TO_WAIT 5
 #define SIZE 1024
@@ -37,6 +38,7 @@ int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW
 void copyFileToOtherUSB(char *path, char *secondPath);
 void checkServerAvailability();
 int rmrf(char *path);
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct Server_filesystem
 {
@@ -93,7 +95,7 @@ int main(void)
     return -1;
   }
   printf("Done with binding\n");
-  if (listen(socket_desc, 1) < 0)
+  if (listen(socket_desc, 2) < 0)
   {
     printf("Error while listening\n");
     return -1;
@@ -156,6 +158,7 @@ int main(void)
 
 void checkServerAvailability()
 {
+  pthread_mutex_lock(&lock);
   printf("Server syncing method called..\n");
   //
   struct stat stats;
@@ -189,13 +192,13 @@ void checkServerAvailability()
     {
       printf("USB2 to be synced.\n");
       system("rsync -avu " USB1 " " USB2);
-       serverInfo.syncUSB2 = 0;
+      serverInfo.syncUSB2 = 0;
     }
     else if (serverInfo.syncUSB1 == 1)
     {
       printf("USB1 to be synced.\n");
       system("rsync -avu " USB2 " " USB1);
-       serverInfo.syncUSB1 = 0;
+      serverInfo.syncUSB1 = 0;
     }
   }
   // else if (!serverInfo.USB1Available && serverInfo.USB2Available)
@@ -205,6 +208,7 @@ void checkServerAvailability()
   //     system("rsync -avu " USB2 " " USB1);
   //   }
   // }
+  pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -239,26 +243,33 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
   }
   printf("array 0: %s\n", array[0]);
   printf("array 1: %s\n", array[1]);
+  char *pathPrefix = "/Volumes/USB1/";
+  // clientFilePath = argv[2];
+  // strcat(clientPathPrefix, clientFilePath);
+
+  char *filePath = malloc(strlen(pathPrefix) + strlen(array[1]) + 1);
+  strcpy(filePath, pathPrefix);
+  strcat(filePath, array[1]);
   if (strcmp(array[0], "GET") == 0)
   {
-    processGetRequest(array[1], client_sock);
+    processGetRequest(filePath, client_sock);
   }
   else if (strcmp(array[0], "INFO") == 0)
   {
     printf("Entering info block");
-    processInfoRequest(array[1], client_sock);
+    processInfoRequest(filePath, client_sock);
   }
   else if (strcmp(array[0], "MD") == 0)
   {
-    processMDRequest(array[1], client_sock);
+    processMDRequest(filePath, client_sock);
   }
   else if (strcmp(array[0], "PUT") == 0)
   {
-    processPutRequest(array[1], client_sock);
+    processPutRequest(filePath, client_sock);
   }
   else if (strcmp(array[0], "RM") == 0)
   {
-    processRmRequest(array[1], client_sock);
+    processRmRequest(filePath, client_sock);
   }
 
   // ptr = strtok(NULL, " ");
@@ -295,6 +306,7 @@ char *remove_end(char *str, char c)
  */
 void processGetRequest(char *path, int sockfd)
 {
+  pthread_mutex_lock(&lock);
   FILE *fp;
   fp = fopen(path, "r");
   char *otherDevicePath;
@@ -311,7 +323,7 @@ void processGetRequest(char *path, int sockfd)
   }
   send_file(fp, sockfd);
   printf("[+]File data sent successfully.\n");
-
+  pthread_mutex_unlock(&lock);
   // printf("[+]Closing the connection.\n");
 }
 
@@ -346,7 +358,8 @@ void send_file(FILE *fp, int sockfd)
  */
 void processInfoRequest(char *path, int sockfd)
 {
-  printf("ENtered in info method");
+  pthread_mutex_lock(&lock);
+  // printf("ENtered in info method\n");
   struct stat stats;
   if (stat(path, &stats) == 0)
   {
@@ -373,6 +386,7 @@ void processInfoRequest(char *path, int sockfd)
       printf("Please check whether '%s' file exists.\n", path);
     }
   }
+  pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -383,6 +397,7 @@ void processInfoRequest(char *path, int sockfd)
  */
 void processMDRequest(char *path, int sockfd)
 {
+  pthread_mutex_lock(&lock);
   printf("Entered in MD method\n");
   int check1, check2;
   char *dirname = path;
@@ -420,6 +435,7 @@ void processMDRequest(char *path, int sockfd)
   {
     printf("Can't send\n");
   }
+  pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -430,6 +446,7 @@ void processMDRequest(char *path, int sockfd)
  */
 void processPutRequest(char *path, int sockfd)
 {
+  pthread_mutex_lock(&lock);
   FILE *fp;
   char *filename = path;
   printf("first filename is %s and length: %d\n", filename, strlen(filename));
@@ -513,7 +530,7 @@ void processPutRequest(char *path, int sockfd)
   }
   // char *secondPath = processPutRequestForOtherDevice(path, sockfd);
   // copyFileToOtherUSB(path, secondPath);
-
+  pthread_mutex_unlock(&lock);
   return;
 }
 
@@ -649,6 +666,7 @@ char *processRequestForOtherDevice(char *path)
  */
 void processRmRequest(char *path, int sockfd)
 {
+  pthread_mutex_lock(&lock);
   printf("Entered in RM method\n");
   char *dirname = path;
   char *secondPath = processRequestForOtherDevice(path);
@@ -730,6 +748,7 @@ void processRmRequest(char *path, int sockfd)
       printf("Can't send\n");
     }
   }
+  pthread_mutex_unlock(&lock);
 }
 
 int rmrf(char *path)
