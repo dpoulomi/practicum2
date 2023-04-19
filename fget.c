@@ -31,7 +31,7 @@ void processPutRequest(char *argv[], int socket_desc, int argc);
 void send_file(FILE *fp, int sockfd);
 void processRmRequest(char *argv[], int socket_desc);
 // void handleConnection(int argc, char *argv[]);
-void handleConnection(void *arguments);
+// void handleConnection(void *arguments);
 
 struct multiexecution_clientparams
 {
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   int socket_desc;
   struct sockaddr_in server_addr;
   char server_message[2000], client_message[2000];
-  // pthread_t tid[2];
+  // pthread_t tid[4];
   // pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
 	// pthread_join(tid[0], (void *)&address);
 
@@ -316,7 +316,7 @@ void processMDRequest(char *argv[], int socket_desc)
     client_message[k] = argv[2][i];
     i++;
   }
-  printf("Client message is: %s \n", client_message);
+  // printf("Client message is: %s \n", client_message);
   if (send(socket_desc, client_message, clientMessageLength, 0) < 0)
   {
     printf("Unable to send message\n");
@@ -465,9 +465,10 @@ void processPutRequest(char *argv[], int socket_desc, int argc)
   char *folderPrefix;
   if (argc == 3)
   {
-    folderPrefix = "/Volumes/USB1";
-    clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1 + strlen(folderPrefix);
-    printf("Client message length is %d", strlen(folderPrefix));
+    // folderPrefix = "/Volumes/USB1";
+    // clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1 + strlen(folderPrefix);
+    clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
+    // printf("Client message length is %d", strlen(folderPrefix));
   }
   else
   {
@@ -490,13 +491,13 @@ void processPutRequest(char *argv[], int socket_desc, int argc)
     client_message[i] = ' ';
     int j = i + 1;
     i = 0;
-    for (k = j; k < strlen(folderPrefix) + j; k++)
-    {
-      client_message[k] = folderPrefix[i];
-      i++;
-    }
-    j = k;
-    i = 0;
+    // for (k = j; k < strlen(folderPrefix) + j; k++)
+    // {
+    //   client_message[k] = folderPrefix[i];
+    //   i++;
+    // }
+    // j = k;
+    // i = 0;
     for (int k = j; k < strlen(argv[2]) + j; k++)
     {
       client_message[k] = argv[2][i];

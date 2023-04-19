@@ -137,9 +137,10 @@ int main(void)
     //   {
     processClientRequest(client_sock, client_message, socket_desc);
     close(client_sock);
-  }
-  //   }
   // }
+  //   }
+  }
+  // close(client_sock);
   close(socket_desc);
 
   return 0;
