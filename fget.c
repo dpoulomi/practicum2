@@ -121,76 +121,76 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void handleConnection(void *arguments){
-  struct multiexecution_clientparams *args = arguments;
-  int argc = args->argc;
-  char **argv = args->userInput;
-  int socket_desc;
-  struct sockaddr_in server_addr;
-  char server_message[2000], client_message[2000];
-  // pthread_t tid[2];
-  // pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
-	// pthread_join(tid[0], (void *)&address);
+// void handleConnection(void *arguments){
+//   struct multiexecution_clientparams *args = arguments;
+//   int argc = args->argc;
+//   char **argv = args->userInput;
+//   int socket_desc;
+//   struct sockaddr_in server_addr;
+//   char server_message[2000], client_message[2000];
+//   // pthread_t tid[2];
+//   // pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
+// 	// pthread_join(tid[0], (void *)&address);
 
-  // Clean buffers:
-  memset(server_message, '\0', sizeof(server_message));
-  memset(client_message, '\0', sizeof(client_message));
+//   // Clean buffers:
+//   memset(server_message, '\0', sizeof(server_message));
+//   memset(client_message, '\0', sizeof(client_message));
 
-  // Create socket:
-  socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+//   // Create socket:
+//   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (socket_desc < 0)
-  {
-    printf("Unable to create socket\n");
-    // return -1;
-  }
+//   if (socket_desc < 0)
+//   {
+//     printf("Unable to create socket\n");
+//     // return -1;
+//   }
 
-  printf("Socket created successfully\n");
+//   printf("Socket created successfully\n");
 
-  // Set port and IP the same as server-side:
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(2000);
-  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+//   // Set port and IP the same as server-side:
+//   server_addr.sin_family = AF_INET;
+//   server_addr.sin_port = htons(2000);
+//   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-  // Send connection request to server:
-  if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-  {
-    printf("Unable to connect\n");
-    // return -1;
-  }
-  printf("Connected with server successfully\n");
-  // struct user_input  input;
-	// mallocdata2.values = data1;
-	// mallocdata2.size = 4;
-  // while(1){
-  if (strcmp(argv[1], "GET") == 0)
-  {
-    // pthread_create(&(tid[1]), NULL, &processGetRequest, (void *)&input);
-	  // pthread_join(tid[1], (void *)&address);
-   processGetRequest(argv, socket_desc, argc);
-  }
-  else if (strcmp(argv[1], "INFO") == 0)
-  {
-    processInfoRequest(argv, socket_desc);
-  }
-  else if (strcmp(argv[1], "MD") == 0)
-  {
-    processMDRequest(argv, socket_desc);
-  }
-  else if (strcmp(argv[1], "PUT") == 0)
-  {
+//   // Send connection request to server:
+//   if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+//   {
+//     printf("Unable to connect\n");
+//     // return -1;
+//   }
+//   printf("Connected with server successfully\n");
+//   // struct user_input  input;
+// 	// mallocdata2.values = data1;
+// 	// mallocdata2.size = 4;
+//   // while(1){
+//   if (strcmp(argv[1], "GET") == 0)
+//   {
+//     // pthread_create(&(tid[1]), NULL, &processGetRequest, (void *)&input);
+// 	  // pthread_join(tid[1], (void *)&address);
+//    processGetRequest(argv, socket_desc, argc);
+//   }
+//   else if (strcmp(argv[1], "INFO") == 0)
+//   {
+//     processInfoRequest(argv, socket_desc);
+//   }
+//   else if (strcmp(argv[1], "MD") == 0)
+//   {
+//     processMDRequest(argv, socket_desc);
+//   }
+//   else if (strcmp(argv[1], "PUT") == 0)
+//   {
 
-    processPutRequest(argv, socket_desc, argc);
-  }
-  else if (strcmp(argv[1], "RM") == 0)
-  {
-    processRmRequest(argv, socket_desc);
-  }
- // }
-  // Close the socket:
-  close(socket_desc);
+//     processPutRequest(argv, socket_desc, argc);
+//   }
+//   else if (strcmp(argv[1], "RM") == 0)
+//   {
+//     processRmRequest(argv, socket_desc);
+//   }
+//  // }
+//   // Close the socket:
+//   close(socket_desc);
   
-}
+// }
 
 /*
  * Writes the data to a local file by getting the content from the server. 

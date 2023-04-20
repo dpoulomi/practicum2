@@ -26,7 +26,8 @@
 #define USB2 "/Volumes/USB2/"
 
 // clock_t last = clock();
-void processClientRequest(int client_sock, char client_message[8196], int socket_desc);
+// void processClientRequest(int client_sock, char client_message[8196]);
+void processClientRequest(void *arguments);
 void processGetRequest(char *dir, int sockfd);
 void processInfoRequest(char *path, int sockfd);
 void send_file(FILE *fp, int sockfd);
@@ -51,6 +52,15 @@ struct Server_filesystem
 };
 struct Server_filesystem serverInfo;
 
+struct client_input
+{
+  // char* USB1 = "USB1";
+  // char* USB2 = "USB2";
+  int client_sock;
+  char client_message[8196];
+};
+
+
 /*
  * Main function
  * @argument void
@@ -62,7 +72,7 @@ int main(void)
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   char server_message[8196], client_message[8196];
-  pthread_t tid;
+  pthread_t tid[20];
   pid_t childpid;
   // struct Server_filesystem serverInfo;
   serverInfo.USB1Available = 0;
@@ -100,7 +110,7 @@ int main(void)
     printf("Error while listening\n");
     return -1;
   }
-
+  int i = 0;
   // Listen for clients:
   clock_t last = clock();
   while (1)
@@ -135,14 +145,20 @@ int main(void)
     //   close(socket_desc);
     //   while (1)
     //   {
-    processClientRequest(client_sock, client_message, socket_desc);
-    close(client_sock);
+      struct client_input input;
+      input.client_sock = client_sock;
+      // input.client_message = client_message;
+      pthread_create(&tid[i], NULL, processClientRequest, &input);
+      pthread_join(tid[i], NULL);
+      i++;
+    // processClientRequest(client_sock, client_message);
+    // close(client_sock);
   // }
   //   }
   }
   // close(client_sock);
   close(socket_desc);
-
+  pthread_exit(NULL);
   return 0;
 }
 
@@ -219,11 +235,21 @@ void checkServerAvailability()
  * @argument int client socket
  * @returns void
  */
-void processClientRequest(int client_sock, char client_message[8196], int socket_desc)
+// void processClientRequest(int client_sock, char client_message[8196])
+void processClientRequest(void *arguments)
 {
 
+
+  // int argc = args->argc;
+  // char **argv = args->userInput;
+   struct client_input *input = arguments;
+      int client_sock = input->client_sock;
+      
   // Receive client's message:
-  char server_message[8196];
+  char server_message[8196],client_message[8196];
+   memset(server_message, '\0', sizeof(server_message));
+  memset(client_message, '\0', sizeof(client_message));
+  // client_message = input.client_message;
 
   if (recv(client_sock, client_message,
            100, 0) < 0)
@@ -272,7 +298,7 @@ void processClientRequest(int client_sock, char client_message[8196], int socket
   {
     processRmRequest(filePath, client_sock);
   }
-
+ close(client_sock);
   // ptr = strtok(NULL, " ");
   // }
 
@@ -319,7 +345,7 @@ void processGetRequest(char *path, int sockfd)
     if (fp == NULL)
     {
       perror("[-]Error in reading file.");
-      exit(1);
+      // exit(1);
     }
   }
   send_file(fp, sockfd);
@@ -344,7 +370,7 @@ void send_file(FILE *fp, int sockfd)
     if (send(sockfd, data, sizeof(data), 0) == -1)
     {
       perror("[-]Error in sending file.");
-      exit(1);
+      // exit(1);
     }
     bzero(data, SIZE);
   }
@@ -367,7 +393,7 @@ void processInfoRequest(char *path, int sockfd)
     if (send(sockfd, &stats, sizeof(stats), 0) == -1)
     {
       perror("[-]Error in sending info.");
-      exit(1);
+      // exit(1);
     }
   }
   else
@@ -378,7 +404,7 @@ void processInfoRequest(char *path, int sockfd)
       if (send(sockfd, &stats, sizeof(stats), 0) == -1)
       {
         perror("[-]Error in sending info.");
-        exit(1);
+        // exit(1);
       }
     }
     else
@@ -417,7 +443,7 @@ void processMDRequest(char *path, int sockfd)
   {
     strcpy(server_message, "Unable to create directory in USB1.");
     printf("Unable to create directory in USB1\n");
-    exit(1);
+    // exit(1);
   }
 
   if (!check2)
@@ -429,7 +455,7 @@ void processMDRequest(char *path, int sockfd)
   {
     strcpy(server_message, "Unable to create directory in USB2.");
     printf("Unable to create directory in USB2\n");
-    exit(1);
+    // exit(1);
   }
 
   if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
