@@ -1,7 +1,7 @@
-all: server fget multiclient
+all: fserver fget multiclient
 
-server: server.c
-	gcc server.c -o server
+server: fserver.c
+	gcc fserver.c -o fserver
 
 client: fget.c
 	gcc fget.c -o fget
@@ -9,16 +9,5 @@ client: fget.c
 multiclient: multiclient.c
 	gcc -o multiclient multiclient.c 
 
-
-# all: server client
-
-# server: server.c
-# 	gcc server.c -o server
-
-# client: client.c
-# 	gcc client.c -o client
-
-# multiclient_execution: multiclient.c
-# 	gcc multiclient.c -o multiclient
 
 

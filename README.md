@@ -14,5 +14,9 @@ Eg:-./fget INFO new_folder_from_start/data7.txt
 
 6)Every operation happens in a way that we have a completely synced up mirrored file server system. If we put a file in one USB ot gets written to the other as well. If GET does not fetch from a specifc server(USB), it will fetch from the other. When a server is back, it gets synced up again forming a mirrored file system.
 
-7)Multiple client requests are handled by forking i.e by creating multiple processes.
+7)Multiple client requests are handled by creating a thread for handling the connection and spawning new threads for each incoming requests.
+
+8) File multiclient helps us test how server can respond to the requests sent by multiple clients each represented by individual threads and connecting ar different sockets and we will have to connect the server as well.
+
+9)If we just want to handle one client at a time we can just open a single client window by running .fget along with the inputs shown above.
 

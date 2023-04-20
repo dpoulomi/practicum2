@@ -30,23 +30,15 @@ void processMDRequest(char *argv[], int socket_desc);
 void processPutRequest(char *argv[], int socket_desc, int argc);
 void send_file(FILE *fp, int sockfd);
 void processRmRequest(char *argv[], int socket_desc);
-// void handleConnection(int argc, char *argv[]);
-// void handleConnection(void *arguments);
 
 struct multiexecution_clientparams
 {
-	char** userInput;
-    int argc;
+  char **userInput;
+  int argc;
 };
-// struct user_input
-// {
-// 	char *argv[];
-//   int socket_desc;
-//   int argc;
-// };
 
 /*
- * Main function 
+ * Main function
  * @argument argc which indicates no of arguments
  * @argument argv which indicates the input arguments
  * @returns a int value
@@ -56,9 +48,6 @@ int main(int argc, char *argv[])
   int socket_desc;
   struct sockaddr_in server_addr;
   char server_message[2000], client_message[2000];
-  // pthread_t tid[4];
-  // pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
-	// pthread_join(tid[0], (void *)&address);
 
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
@@ -87,15 +76,11 @@ int main(int argc, char *argv[])
     return -1;
   }
   printf("Connected with server successfully\n");
-  // struct user_input  input;
-	// mallocdata2.values = data1;
-	// mallocdata2.size = 4;
-  // while(1){
+
   if (strcmp(argv[1], "GET") == 0)
   {
-    // pthread_create(&(tid[1]), NULL, &processGetRequest, (void *)&input);
-	  // pthread_join(tid[1], (void *)&address);
-   processGetRequest(argv, socket_desc, argc);
+
+    processGetRequest(argv, socket_desc, argc);
   }
   else if (strcmp(argv[1], "INFO") == 0)
   {
@@ -107,93 +92,21 @@ int main(int argc, char *argv[])
   }
   else if (strcmp(argv[1], "PUT") == 0)
   {
-
     processPutRequest(argv, socket_desc, argc);
   }
   else if (strcmp(argv[1], "RM") == 0)
   {
     processRmRequest(argv, socket_desc);
   }
- // }
+  // }
   // Close the socket:
   close(socket_desc);
 
   return 0;
 }
 
-// void handleConnection(void *arguments){
-//   struct multiexecution_clientparams *args = arguments;
-//   int argc = args->argc;
-//   char **argv = args->userInput;
-//   int socket_desc;
-//   struct sockaddr_in server_addr;
-//   char server_message[2000], client_message[2000];
-//   // pthread_t tid[2];
-//   // pthread_create(&(tid[0]), NULL, &pm_malloc, (void *)&mallocdata1);
-// 	// pthread_join(tid[0], (void *)&address);
-
-//   // Clean buffers:
-//   memset(server_message, '\0', sizeof(server_message));
-//   memset(client_message, '\0', sizeof(client_message));
-
-//   // Create socket:
-//   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-
-//   if (socket_desc < 0)
-//   {
-//     printf("Unable to create socket\n");
-//     // return -1;
-//   }
-
-//   printf("Socket created successfully\n");
-
-//   // Set port and IP the same as server-side:
-//   server_addr.sin_family = AF_INET;
-//   server_addr.sin_port = htons(2000);
-//   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-//   // Send connection request to server:
-//   if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-//   {
-//     printf("Unable to connect\n");
-//     // return -1;
-//   }
-//   printf("Connected with server successfully\n");
-//   // struct user_input  input;
-// 	// mallocdata2.values = data1;
-// 	// mallocdata2.size = 4;
-//   // while(1){
-//   if (strcmp(argv[1], "GET") == 0)
-//   {
-//     // pthread_create(&(tid[1]), NULL, &processGetRequest, (void *)&input);
-// 	  // pthread_join(tid[1], (void *)&address);
-//    processGetRequest(argv, socket_desc, argc);
-//   }
-//   else if (strcmp(argv[1], "INFO") == 0)
-//   {
-//     processInfoRequest(argv, socket_desc);
-//   }
-//   else if (strcmp(argv[1], "MD") == 0)
-//   {
-//     processMDRequest(argv, socket_desc);
-//   }
-//   else if (strcmp(argv[1], "PUT") == 0)
-//   {
-
-//     processPutRequest(argv, socket_desc, argc);
-//   }
-//   else if (strcmp(argv[1], "RM") == 0)
-//   {
-//     processRmRequest(argv, socket_desc);
-//   }
-//  // }
-//   // Close the socket:
-//   close(socket_desc);
-  
-// }
-
 /*
- * Writes the data to a local file by getting the content from the server. 
+ * Writes the data to a local file by getting the content from the server.
  * @argument int type socket
  * @argument local path to which the data has to be saved.
  * @returns void
@@ -218,20 +131,20 @@ void write_file(int sockfd, char *clientFilePath)
     n = recv(sockfd, buffer, SIZE, 0);
     if (n <= 0)
     {
-      printf("Check data save..\n");
+      // printf("Check data save..\n");
       break;
     }
-    printf("%s", buffer);
+    // printf("%s", buffer);
     fprintf(fp, "%s", buffer);
     bzero(buffer, SIZE);
   }
   fclose(fp);
-  printf("test exit");
+  // printf("test exit");
   return;
 }
 
 /*
- * Gets data to a local file by getting the content from the server. 
+ * Gets data to a local file by getting the content from the server.
  * @argument input arguments by user
  * @argument int socket
  * @argument int number of arguments
@@ -246,12 +159,9 @@ void processGetRequest(char *argv[], int socket_desc, int argc)
   if (argc == 3)
   {
     // printf("test get with local path mehtioned\n %s", argv);
-    char* clientPathPrefix = "/Users/neo";
-    // clientFilePath = argv[2];
-    // strcat(clientPathPrefix, clientFilePath);
-
+    char *clientPathPrefix = "/Users/neo";
     clientFilePath = malloc(strlen(clientPathPrefix) + strlen(argv[2]) + 1);
-     strcpy(clientFilePath, clientPathPrefix);
+    strcpy(clientFilePath, clientPathPrefix);
     strcat(clientFilePath, argv[2]);
     // printf("The client path using remote file path is: %s", clientFilePath);
   }
@@ -290,7 +200,7 @@ void processGetRequest(char *argv[], int socket_desc, int argc)
 }
 
 /*
- * Makes a directory in the server. 
+ * Makes a directory in the server.
  * @argument input arguments by user
  * @argument int socket
  * @returns void
@@ -330,7 +240,7 @@ void processMDRequest(char *argv[], int socket_desc)
 }
 
 /*
- * Get folder or file info from server 
+ * Get folder or file info from server
  * @argument input arguments by user
  * @argument int socket
  * @returns void
@@ -338,10 +248,8 @@ void processMDRequest(char *argv[], int socket_desc)
 void processInfoRequest(char *argv[], int socket_desc)
 {
   struct stat stats;
-  // char* clientMessage = processClientRequestInput(argv);
   int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
 
-  // printf("the legth of inout %d \n",clientMessageLength );
   char client_message[clientMessageLength];
   int i = 0;
   for (i = 0; i < strlen(argv[1]); i++)
@@ -375,26 +283,26 @@ void printFileProperties(struct stat stats)
 {
   struct tm dt;
 
-struct passwd *pw = getpwuid(stats.st_uid);
-struct group  *gr = getgrgid(stats.st_gid);
-// File owner
-if (pw != NULL)
-{
+  struct passwd *pw = getpwuid(stats.st_uid);
+  struct group *gr = getgrgid(stats.st_gid);
+  // File owner
+  if (pw != NULL)
+  {
     printf("File owner: %s\n", pw->pw_name);
-}
-else
-{
+  }
+  else
+  {
     printf("File owner name not found. \n");
-}
-// Group name
-if (gr != NULL)
-{
+  }
+  // Group name
+  if (gr != NULL)
+  {
     printf("Group name: %s", gr->gr_name);
-}
-else
-{
+  }
+  else
+  {
     printf("Group name not found.");
-}
+  }
 
   // File permissions
   printf("\nFile access: ");
@@ -407,7 +315,6 @@ else
 
   // File size
   printf("\nFile size: %d", stats.st_size);
-
 
   // Get file creation time in seconds and
   // convert seconds to date and time format
@@ -422,7 +329,7 @@ else
 }
 
 /*
- * Makes a directory in the server. 
+ * Makes a directory in the server.
  * @argument input arguments by user
  * @argument int socket
  * @returns void
@@ -452,7 +359,7 @@ char *processClientRequestInput(char *argv[])
 }
 
 /*
- * Puts a file to the server from local disk. 
+ * Puts a file to the server from local disk.
  * @argument input arguments by user
  * @argument int socket
  * @int number of arguments
@@ -460,22 +367,17 @@ char *processClientRequestInput(char *argv[])
  */
 void processPutRequest(char *argv[], int socket_desc, int argc)
 {
-  // char* clientMessage = processClientRequestInput(argv);
   int clientMessageLength = 0;
   char *folderPrefix;
   if (argc == 3)
   {
-    // folderPrefix = "/Volumes/USB1";
-    // clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1 + strlen(folderPrefix);
     clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
-    // printf("Client message length is %d", strlen(folderPrefix));
   }
   else
   {
     clientMessageLength = strlen(argv[1]) + strlen(argv[3]) + 1;
   }
 
-  // printf("the legth of inout %d \n",clientMessageLength );
   char client_message[clientMessageLength];
   if (argc == 3)
   {
@@ -491,19 +393,12 @@ void processPutRequest(char *argv[], int socket_desc, int argc)
     client_message[i] = ' ';
     int j = i + 1;
     i = 0;
-    // for (k = j; k < strlen(folderPrefix) + j; k++)
-    // {
-    //   client_message[k] = folderPrefix[i];
-    //   i++;
-    // }
-    // j = k;
-    // i = 0;
+
     for (int k = j; k < strlen(argv[2]) + j; k++)
     {
       client_message[k] = argv[2][i];
       i++;
     }
-    //  printf("Remote file path missing so updated path as per local path is %s", client_message);
   }
   else
   {
@@ -542,7 +437,7 @@ void processPutRequest(char *argv[], int socket_desc, int argc)
 }
 
 /*
- * Sends file to the server from local disk. 
+ * Sends file to the server from local disk.
  * @argument file pointer
  * @argument int socket
  * @returns void
@@ -573,7 +468,6 @@ void processRmRequest(char *argv[], int socket_desc)
 {
   int clientMessageLength = strlen(argv[1]) + strlen(argv[2]) + 1;
 
-  // printf("the legth of inout %d \n",clientMessageLength );
   char client_message[clientMessageLength];
   int i = 0;
   for (i = 0; i < strlen(argv[1]); i++)

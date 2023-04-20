@@ -36,7 +36,6 @@ void processPutRequest(char *path, int sockfd);
 char *processRequestForOtherDevice(char *path);
 void processRmRequest(char *path, int sockfd);
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-void copyFileToOtherUSB(char *path, char *secondPath);
 void checkServerAvailability();
 int rmrf(char *path);
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -140,11 +139,6 @@ int main(void)
            inet_ntoa(client_addr.sin_addr),
            ntohs(client_addr.sin_port));
 
-    // if ((childpid = fork()) == 0)
-    // {
-    //   close(socket_desc);
-    //   while (1)
-    //   {
       struct client_input input;
       input.client_sock = client_sock;
       // input.client_message = client_message;
@@ -162,16 +156,6 @@ int main(void)
   return 0;
 }
 
-// void *threadproc(void *arg)
-// {
-//   struct Server_filesystem serverInfo;
-//     while()
-//     {
-//         sleep(20);
-//         checkServerAvailability();
-//     }
-//     return 0;
-// }
 
 void checkServerAvailability()
 {
@@ -218,13 +202,6 @@ void checkServerAvailability()
       serverInfo.syncUSB1 = 0;
     }
   }
-  // else if (!serverInfo.USB1Available && serverInfo.USB2Available)
-  // {
-  //   if (!serverInfo.synced)
-  //   {
-  //     system("rsync -avu " USB2 " " USB1);
-  //   }
-  // }
   pthread_mutex_unlock(&lock);
 }
 
@@ -238,10 +215,7 @@ void checkServerAvailability()
 // void processClientRequest(int client_sock, char client_message[8196])
 void processClientRequest(void *arguments)
 {
-
-
-  // int argc = args->argc;
-  // char **argv = args->userInput;
+ pthread_mutex_lock(&lock);
    struct client_input *input = arguments;
       int client_sock = input->client_sock;
       
@@ -257,7 +231,7 @@ void processClientRequest(void *arguments)
     printf("Couldn't receive\n");
     // return -1;
   }
-  printf("the legth of inout %d \n", strlen(client_message));
+  printf("the length of input %d \n", strlen(client_message));
   printf("Msg from client: %s\n", client_message);
 
   char *ptr = strtok(client_message, " ");
@@ -270,9 +244,8 @@ void processClientRequest(void *arguments)
   }
   printf("array 0: %s\n", array[0]);
   printf("array 1: %s\n", array[1]);
-  char *pathPrefix = "/Volumes/USB1/";
-  // clientFilePath = argv[2];
-  // strcat(clientPathPrefix, clientFilePath);
+  // char *pathPrefix = "/Volumes/USB1/";
+  char *pathPrefix = USB1;
 
   char *filePath = malloc(strlen(pathPrefix) + strlen(array[1]) + 1);
   strcpy(filePath, pathPrefix);
@@ -298,19 +271,10 @@ void processClientRequest(void *arguments)
   {
     processRmRequest(filePath, client_sock);
   }
+  
  close(client_sock);
-  // ptr = strtok(NULL, " ");
-  // }
-
-  // Respond to client:
-
-  // strcpy(server_message, "This is the server's response message.");
-
-  // if (send(client_sock, server_message, strlen(server_message), 0) < 0)
-  // {
-  //   printf("Can't send\n");
-  //   // return -1;
-  // }
+  pthread_mutex_unlock(&lock);
+ 
 }
 char *remove_end(char *str, char c)
 {
@@ -333,7 +297,7 @@ char *remove_end(char *str, char c)
  */
 void processGetRequest(char *path, int sockfd)
 {
-  pthread_mutex_lock(&lock);
+  // pthread_mutex_lock(&lock);
   FILE *fp;
   fp = fopen(path, "r");
   char *otherDevicePath;
@@ -350,7 +314,7 @@ void processGetRequest(char *path, int sockfd)
   }
   send_file(fp, sockfd);
   printf("[+]File data sent successfully.\n");
-  pthread_mutex_unlock(&lock);
+  // pthread_mutex_unlock(&lock);
   // printf("[+]Closing the connection.\n");
 }
 
@@ -374,7 +338,6 @@ void send_file(FILE *fp, int sockfd)
     }
     bzero(data, SIZE);
   }
-  //  printf("test exit");
 }
 
 /*
@@ -385,7 +348,7 @@ void send_file(FILE *fp, int sockfd)
  */
 void processInfoRequest(char *path, int sockfd)
 {
-  pthread_mutex_lock(&lock);
+  // pthread_mutex_lock(&lock);
   // printf("ENtered in info method\n");
   struct stat stats;
   if (stat(path, &stats) == 0)
@@ -413,7 +376,7 @@ void processInfoRequest(char *path, int sockfd)
       printf("Please check whether '%s' file exists.\n", path);
     }
   }
-  pthread_mutex_unlock(&lock);
+  // pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -424,14 +387,27 @@ void processInfoRequest(char *path, int sockfd)
  */
 void processMDRequest(char *path, int sockfd)
 {
-  pthread_mutex_lock(&lock);
+  // pthread_mutex_lock(&lock);
   printf("Entered in MD method\n");
   int check1, check2;
   char *dirname = path;
-  char *otherDevicePath = processRequestForOtherDevice(path);
+  check1 = mkdir(dirname, 0777);
+char *otherDevicePath = processRequestForOtherDevice(path);
+  
+ 
+    // Returns first token
+    // char* token = strtok(str, "/");
+ 
+    // // Keep printing tokens while one of the
+    // // delimiters present in str[].
+    // while (token != NULL) {
+    //     printf(" % s\n & quot;, token);
+    //     token = strtok(NULL, " - ");
+    // }
+  
   char server_message[2000];
   memset(server_message, '\0', sizeof(server_message));
-  check1 = mkdir(dirname, 0777);
+  
   check2 = mkdir(otherDevicePath, 0777);
   // check if directory is created or not
   if (!check1)
@@ -462,7 +438,7 @@ void processMDRequest(char *path, int sockfd)
   {
     printf("Can't send\n");
   }
-  pthread_mutex_unlock(&lock);
+  // pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -473,15 +449,10 @@ void processMDRequest(char *path, int sockfd)
  */
 void processPutRequest(char *path, int sockfd)
 {
-  pthread_mutex_lock(&lock);
+  // pthread_mutex_lock(&lock);
   FILE *fp;
   char *filename = path;
   printf("first filename is %s and length: %d\n", filename, strlen(filename));
-
-  // for (int i = 0; i < strlen(filename); i++)
-  // {
-  //   printf("The characetrs are %c\n", filename[i]);
-  // }
 
   char buffer[SIZE];
 
@@ -499,33 +470,13 @@ void processPutRequest(char *path, int sockfd)
   int n;
 
   FILE *fp1;
-  // for(int i = 0 ; i<strlen(secondPath);i++ ){
-  //   printf("The characetrs are %c\n", secondPath[i]);
-  // }
-  // printf("The comparison is : %d",  strcmp(secondPath, "/Volumes/USB2/test_folder4/test_server_put173.c"));
-
-  //  int check;
-  //  char * folder_path =  remove_end(secondPath, '/');
-  //    check = mkdir(secondPath, 0777);
-  fp1 = fopen(secondPath, "w"); // "/Volumes/USB2/test_folder4/test_server_put172.c"
+  fp1 = fopen(secondPath, "w");
   if (fp1 == NULL)
   {
     printf("Second file path does not exist. Please create the file path first.\n");
     // perror("Error");
     // exit(1);
   }
-  // check if directory is created or not
-  // if (!check)
-  // {
-
-  //   printf("Mirrored directory created\n");
-  // }
-  // else
-  // {
-
-  //   printf("Unable to create mirrored directory\n");
-  //   exit(1);
-  // }
   while (1)
   {
     n = recv(sockfd, buffer, SIZE, 0);
@@ -533,17 +484,14 @@ void processPutRequest(char *path, int sockfd)
     {
       break;
     }
-    // printf("First Buffer: %s\n", buffer);
     if (fp != NULL)
     {
       fprintf(fp, "%s", buffer);
     }
-    // printf("Second Buffer: %s\n", buffer);
     if (fp1 != NULL)
     {
       fprintf(fp1, "%s", buffer);
     }
-    //  printf( "Buffer is %s", buffer);
 
     bzero(buffer, SIZE);
   }
@@ -555,57 +503,11 @@ void processPutRequest(char *path, int sockfd)
   {
     fclose(fp1);
   }
-  // char *secondPath = processPutRequestForOtherDevice(path, sockfd);
-  // copyFileToOtherUSB(path, secondPath);
-  pthread_mutex_unlock(&lock);
+  // pthread_mutex_unlock(&lock);
   return;
 }
 
-void copyFileToOtherUSB(char *path, char *secondPath)
-{
 
-  FILE *fptr1, *fptr2;
-  char ch, fname1[20], fname2[20];
-  printf("first filename is %s and length: %d\n", path, strlen(path));
-  printf("second filename is %s and length: %d\n", secondPath, strlen(secondPath));
-  // printf("\n Program to copy a file in another name: \n");
-  // printf("Enter the source file name: ");
-  // scanf("%s", fname1);
-
-  fptr1 = fopen(path, "r");
-  if (fptr1 == NULL)
-  {
-    printf("File1 does not found or an error occured when opening!!");
-    perror("Error");
-    exit(1);
-  }
-  // printf("\n Enter the new file name: ");
-  // scanf("%s", secondPath);
-  fptr2 = fopen(secondPath, "w");
-  if (fptr2 == NULL)
-  {
-    printf("File2 does not found or an error occured when opening!!");
-    perror("Error");
-    fclose(fptr1);
-    exit(2);
-  }
-  while (1)
-  {
-    ch = fgetc(fptr1);
-
-    if (ch == EOF)
-    {
-      break;
-    }
-    else
-    {
-      fputc(ch, fptr2);
-    }
-  }
-  printf("The file %s copied to file %s succesfully.\n", path, secondPath);
-  fclose(fptr1);
-  fclose(fptr2);
-}
 
 /*
  * Creates path for the altenative USB device for mirroring
@@ -622,40 +524,6 @@ char *processRequestForOtherDevice(char *path)
     secondPath[k] = path[k];
   }
 
-  // char *token; // in your original code allocate memory to pointer string
-  // token = strtok(path, "/");
-  // char *ch = "/";
-  // size_t n;
-  // n = 0;
-  // while (token != NULL)
-  // {
-
-  //   if (strcmp(token, "USB1") == 0) // if "dog" found
-  //     strcpy(&string[n], "/USB2");  // add "bird " at that position
-  //   else if (strcmp(token, "USB2") == 0)
-  //     strcpy(&string[n], "/USB1");
-  //   // if doesn't add token
-  //   else
-  //   {
-
-  //     printf("The token is %s\n", token);
-  //     printf("the digit is %d\n", n);
-  //     strcpy(&string[n], "/");
-  //     strcpy(&string[n + 1], token);
-  //   }
-  //    n = strlen(string);
-  //   token = strtok(NULL, "/");
-  // }
-  // printf("The token is %s\n", token);
-  // printf("The string  is %s \n", &string);
-  // processPutRequest(string, sockfd);
-  // string[strlen(string)] = '\0';
-  // int i = 0;
-  // printf("\n$");
-
-  // while (secondPath[i] != '\0')
-  // {
-
   for (int i = 0; secondPath[i] != '\0'; i++)
   {
     // printf("(%c, %d) ", secondPath[i], i);
@@ -670,16 +538,11 @@ char *processRequestForOtherDevice(char *path)
       secondPath[i] = '2';
       break;
     }
-    // else
-    //   continue;
   }
-  printf("test1");
   for (int k = 0; k < strlen(path); k++)
   {
     printf("(%c, %d) ", secondPath[k], k);
   }
-  //  i++;
-  // }
   printf("\n");
 
   return secondPath;
@@ -693,7 +556,7 @@ char *processRequestForOtherDevice(char *path)
  */
 void processRmRequest(char *path, int sockfd)
 {
-  pthread_mutex_lock(&lock);
+  // pthread_mutex_lock(&lock);
   printf("Entered in RM method\n");
   char *dirname = path;
   char *secondPath = processRequestForOtherDevice(path);
@@ -710,8 +573,7 @@ void processRmRequest(char *path, int sockfd)
   }
   else
   {
-    //  strcpy (server_message,"Unable to remove directory");
-    // printf("Unable to remove directory %s\n", dirname);
+   
     sprintf(cmd, "rm -rf %s", dirname);
 
     if (system(cmd) == 0)
@@ -733,10 +595,10 @@ void processRmRequest(char *path, int sockfd)
       }
     }
 
-    if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
-    {
-      printf("Can't send\n");
-    }
+    // if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
+    // {
+    //   printf("Can't send\n");
+    // }
   }
 
   // for other USB
@@ -747,8 +609,6 @@ void processRmRequest(char *path, int sockfd)
   }
   else
   {
-    //  strcpy (server_message,"Unable to remove directory");
-    // printf("Unable to remove directory %s\n", dirname);
     sprintf(cmd, "rm -rf %s", secondPath);
 
     if (system(cmd) == 0)
@@ -770,12 +630,16 @@ void processRmRequest(char *path, int sockfd)
       }
     }
 
-    if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
+    // if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
+    // {
+    //   printf("Can't send\n");
+    // }
+  }
+  if (send(sockfd, server_message, sizeof(server_message), 0) < 0)
     {
       printf("Can't send\n");
     }
-  }
-  pthread_mutex_unlock(&lock);
+  // pthread_mutex_unlock(&lock);
 }
 
 int rmrf(char *path)
